@@ -6,8 +6,7 @@ import { useEffect, useState } from "react";
 export default function Home() {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL;
   console.debug("API_BASE", API_BASE);
-  const [editMode, setEditMode] = useState(false);
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit } = useForm();
   const [products, setProducts] = useState([]);
   const [category, setCategory] = useState([]);
 
@@ -24,24 +23,7 @@ export default function Home() {
     setCategory(c);
   }
 
-  const handleProductSubmit = (data) => {
-    if (editMode) {
-      // Updating a product
-      fetch(`${API_BASE}/product`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      }).then(() => {
-        stopEditMode();
-        fetchProducts()
-      });
-      return
-    }
-
-    // Creating a new product
-
+  const createProduct = (data) => {
     fetch(`${API_BASE}/product`, {
       method: "POST",
       headers: {
@@ -53,28 +35,11 @@ export default function Home() {
 
   const deleteById = (id) => async () => {
     if (!confirm("Are you sure?")) return;
-
+    
     await fetch(`${API_BASE}/product/${id}`, {
       method: "DELETE",
     });
     fetchProducts();
-  }
-
-  const startEditMode = (product) => {
-    // console.log(product)
-    reset(product);
-    setEditMode(true);
-  }
-
-  const stopEditMode = () => {
-    setEditMode(false);
-    reset({
-      code: '',
-      name: "",
-      description: "",
-      price: '',
-      category: "",
-    });
   }
 
   useEffect(() => {
@@ -85,7 +50,7 @@ export default function Home() {
   return (
     <div className="flex flex-row gap-4">
       <div className="flex-1 w-64 ">
-        <form onSubmit={handleSubmit(handleProductSubmit)}>
+        <form onSubmit={handleSubmit(createProduct)}>
           <div className="grid grid-cols-2 gap-4 m-4 w-1/2">
             <div>Code:</div>
             <div>
@@ -134,29 +99,13 @@ export default function Home() {
                 ))}
               </select>
             </div>
-            {editMode ?
-              <>
-                              <input
-                  type="submit"
-                  value="Update"
-                  className="bg-blue-800 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
-                />
-                {' '}
-                <button
-                  onClick={() => stopEditMode()}
-                  className=" italic bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-full"
-                >Cancel
-                </button>
-              </>
-              :
-              <div className="col-span-2">
-                <input
-                  type="submit"
-                  value="Add"
-                  className="bg-blue-800 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
-                />
-              </div>
-            }
+            <div className="col-span-2">
+              <input
+                type="submit"
+                value="Add"
+                className="bg-blue-800 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
+              />
+            </div>
           </div>
         </form>
       </div>
@@ -167,11 +116,10 @@ export default function Home() {
             products.map((p) => (
               <li key={p._id}>
                 <button className="border border-black p-1/2" onClick={deleteById(p._id)}>❌</button>{' '}
-                <button onClick={() => startEditMode(p)}>📝</button>{' '}
                 <Link href={`/product/${p._id}`} className="font-bold">
                   {p.name}
                 </Link>{" "}
-                - {p.description} (${p.price})
+                - {p.description}
               </li>
             ))}
         </ul>
